@@ -1,0 +1,1 @@
+sudo rm -rf /data/seis/fah/*; sudo /Users/yzyan/jython2.7.0/bin/jython -Dpython.path=./libs/jogl-all.jar:./libs/arpack-java.jar:./libs/edu_mines_jtk.jar:./libs/gluegen-rt-natives-macosx-universal.jar:./libs/gluegen-rt.jar:./libs/junit.jar:./libs/jythonlib.jar:./libs/netlib-java.jar:./libs/jogl-all-natives-macosx-universal.jar:./libs/ipf.jar src/ipf/RunByStep.py fake
