@@ -20,6 +20,10 @@ s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
 def getSamplings():
   return s1,s2,s3
 
+def setSamplings(a1,a2,a3):
+  s1,s2,s3 = a1,a2,a3
+  return s1,s2,s3
+
 def getSeismicDir():
   return seismicDir
 
@@ -31,6 +35,22 @@ def readImage(name):
   Reads an image from a file with specified name.
   name: base name of image file; e.g., "tpsz"
   """
+  fileName = seismicDir+name+".dat"
+  image = zerofloat(n1,n2,n3)
+  ais = ArrayInputStream(fileName)
+  ais.readFloats(image)
+  ais.close()
+  return image
+
+def readImage(name,l1,l2,l3):
+  """ 
+  Reads an image from a file with specified name.
+  name: base name of image file; e.g., "tpsz"
+  """
+  n1=l1
+  n2=l2
+  n3=l3
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   fileName = seismicDir+name+".dat"
   image = zerofloat(n1,n2,n3)
   ais = ArrayInputStream(fileName)

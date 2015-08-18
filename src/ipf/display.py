@@ -55,7 +55,13 @@ def main(args):
   goDisplay(args)
 
 def goDisplay(args):
-  gx = readImage(args[1])
+  a1 = int(args[2])
+  a2 = int(args[3])
+  a3 = int(args[4])
+  gx = readImage(args[1],a1,a2,a3)
+  n1,n2,n3 = a1,a2,a3;
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3);
+  setSamplings(s1,s2,s3);
   impedance = False # if True, data = impedance model
   print "gx min =",min(gx)," max =",max(gx)
   gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
