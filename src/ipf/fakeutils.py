@@ -77,6 +77,14 @@ def writeImage(name,image):
   aos.close()
   return image
 
+def writeImage2(voldir,i1,i2,i3,image):
+  fileName = voldir+'vol'+'%04d' % i1 + '%04d' % i2 + '%04d' % i3 + ".dat"
+  print fileName
+  aos = ArrayOutputStream(fileName)
+  aos.writeFloats(image)
+  aos.close()
+  return fileName
+
 #############################################################################
 # read/write fault skins
 
