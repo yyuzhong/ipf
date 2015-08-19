@@ -58,10 +58,16 @@ def goDisplay(args):
   a1 = int(args[2])
   a2 = int(args[3])
   a3 = int(args[4])
-  gx = readImage(args[1],a1,a2,a3)
+  gx = readImage2(args[1],a1,a2,a3)
+  global n1
+  global n2
+  global n3
+  global s1
+  global s2
+  global s3
   n1,n2,n3 = a1,a2,a3;
   s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3);
-  setSamplings(s1,s2,s3);
+  setSamplings(a1,a2,a3);
   impedance = False # if True, data = impedance model
   print "gx min =",min(gx)," max =",max(gx)
   gmin,gmax,gmap = -3.0,3.0,ColorMap.GRAY
@@ -211,7 +217,8 @@ def plot3(f,g=None,cmin=None,cmax=None,cmap=None,clab=None,cint=None,
         lg = LineGroup(xyz)
         sg.addChild(lg)
     sf.world.addChild(sg)
-  ipg.setSlices(95,5,51)
+  ipg.setSlices(1,1,1)
+  #ipg.setSlices(95,5,51)
   #ipg.setSlices(95,5,95)
   if cbar:
     sf.setSize(837,700)

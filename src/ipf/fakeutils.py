@@ -21,7 +21,14 @@ def getSamplings():
   return s1,s2,s3
 
 def setSamplings(a1,a2,a3):
-  s1,s2,s3 = a1,a2,a3
+  global n1
+  global n2
+  global n3
+  global s1
+  global s2
+  global s3
+  n1,n2,n3 = a1,a2,a3
+  s1,s2,s3 = Sampling(n1),Sampling(n2),Sampling(n3)
   return s1,s2,s3
 
 def getSeismicDir():
@@ -42,7 +49,7 @@ def readImage(name):
   ais.close()
   return image
 
-def readImage(name,l1,l2,l3):
+def readImage2(name,l1,l2,l3):
   """ 
   Reads an image from a file with specified name.
   name: base name of image file; e.g., "tpsz"
