@@ -28,6 +28,10 @@ import static ipf.FaultGeometry.*;
  * </em>
  * @author Dave Hale, Colorado School of Mines
  * @version 2014.06.04
+ * 
+ * @revised Ted Clee, TEC Applications Analysis
+ * @version 2015.07.13
+ * Added optional output volume to mark locations of faults and channels.
  */
 public class FakeData {
 
@@ -62,9 +66,9 @@ public class FakeData {
       double[] noises = {0.5};
       int n = sequences.length;
       for (int i=0; i<n; ++i) {
-        float[][][][] f = seismicAndSlopes3d2014A(
+        float[][][][] f = seismicAndSlopes3d2014A(101,102,103,
             sequences[i],nplanars[i],conjugates[i],conicals[i],
-            impedances[i],wavelets[i],noises[i]);
+            impedances[i],wavelets[i],noises[i],false);
         trace(" f min="+min(f[0])+" max="+max(f[0]));
         trace("p2 min="+min(f[1])+" max="+max(f[1]));
         trace("p3 min="+min(f[2])+" max="+max(f[2]));
@@ -95,7 +99,8 @@ public class FakeData {
    * @return array of arrays {f,p2,p3} with image f and slopes p2 and p3.
    */
   public static float[][][][] seismicAndSlopes3d2014A(double noise) {
-    return seismicAndSlopes3d2014A("OA",3,false,false,false,true,noise);
+    return seismicAndSlopes3d2014A(101,102,103,
+    		"OA",3,false,false,false,true,noise,false);
   }
 
   /**
@@ -107,14 +112,14 @@ public class FakeData {
    * @param impedance true, for impedance instead of reflectivity.
    * @param wavelet true, for wavelet; false, for no wavelet.
    * @param noise rms of noise (relative to signal) added to the image.
-   * @return array of arrays {f,p2,p3} with image f and slopes p2 and p3.
+   * @param mark true, to output a feature mark volume fmk.
+   * @return array of arrays {f,p2,p3,[fmk]} with image f and slopes p2 and p3.
    */
   public static float[][][][] seismicAndSlopes3d2014A(
+      int n1, int n2, int n3,
       String sequence, int nplanar, boolean conjugate, boolean conical,
-      boolean impedance, boolean wavelet, double noise) {
-    int n1 = 101;
-    int n2 = 102;
-    int n3 = 103;
+      boolean impedance, boolean wavelet, double noise, boolean mark) {
+	// int n1 = 101; int n2 = 102; int n3 = 103; // original demo case
     int m1 = n1+50;
 
     // Number of episodes in deformation sequence of folding and faulting.
@@ -162,28 +167,37 @@ public class FakeData {
     PlanarFault3 faultb = new PlanarFault3(r1b,r2b,r3b,phib,thetab,throwb);
     PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
     ConicalFault3 faultd = new ConicalFault3(r1d,r2d,r3d,thetad,throwd);
+    
+    // Construct a feature mark volume in p[4], if specified
+    final float[][][][] p = new float[5][n3][n2][m1];
+    float[][][] fmk = null;
+    if (mark) {
+    	zero( p[4] );
+    } else {
+    	p[4] = null;
+    }
 
     // Reflectivity or impedance.
-    float[][][][] p = makeReflectivityWithNormals(m1,n2,n3);
-    p = addChannels(p);
+    makeReflectivityWithNormals( p );
+    addChannels(p);
     if (impedance)
-      p = impedanceFromReflectivity(p);
-
+      impedanceFromReflectivity(p);
+    
     // Apply the deformation sequence.
     for (int js=0; js<ns; ++js) {
       if (sequence.charAt(js)=='O') {
-        p = apply(shear,p);
+        apply(shear,p);
       } else if (sequence.charAt(js)=='A') {
-        if (nplanar>0) p = apply(faulta,p);
-        if (nplanar>1) p = apply(faultb,p);
-        if (nplanar>2) p = apply(faultc,p);
-        if (conical) p = apply(faultd,p);
+        if (nplanar>0) apply(faulta,p);
+        if (nplanar>1) apply(faultb,p);
+        if (nplanar>2) apply(faultc,p);
+        if (conical) apply(faultd,p);
       }
     }
 
     // Wavelet and noise.
     if (wavelet)
-      p = addWavelet(0.15,p);
+      addWavelet(0.15,p);
     p[0] = mul(1.0f/rms(p[0]),p[0]);
     p[0] = addNoise(noise,p[0]);
 
@@ -195,7 +209,10 @@ public class FakeData {
     p[0] = copy(n1,n2,n3,p[0]);
     p[2] = copy(n1,n2,n3,p[2]);
     p[3] = copy(n1,n2,n3,p[3]);
+    p[4] = copy(n1,n2,n3,p[4]);
 
+    if (mark)
+    	return new float[][][][]{p[0],p[2],p[3],p[4]};
     return new float[][][][]{p[0],p[2],p[3]};
   }
 
@@ -325,6 +342,7 @@ public class FakeData {
   private interface T3 {
     C3 f(float x1, float x2, float x3);
     D3 df(float x1, float x2, float x3);
+    boolean onfault(float x1, float x2, float x3);
   }
 
   /**
@@ -412,11 +430,13 @@ public class FakeData {
    * and 3rd components of normal vectors, p1, p2, and p3. The returned array
    * {q0,q1,q2,q3} contains the corresponding transformed image and normal
    * vectors. All normal vectors are unit vectors.
+   * If an additional array p4 is input, a 1.0 value will be inserted at
+   * points along the fault trace in the corresponding output q4
    * @param t coordinate transform f(x).
    * @param p input image p(x) and normal vectors.
    * @return transformed image q(x) = p(f(x) and normal vectors.
    */
-  private static float[][][][] apply(final T3 t, final float[][][][] p) {
+  private static void apply(final T3 t, final float[][][][] p) {
     final int n1 = p[0][0][0].length;
     final int n2 = p[0][0].length;
     final int n3 = p[0].length;
@@ -424,6 +444,32 @@ public class FakeData {
     final float[][][] q1 = apply(t,p[1]);
     final float[][][] q2 = apply(t,p[2]);
     final float[][][] q3 = apply(t,p[3]);
+    final boolean mark = (p[4] != null);	// is there a feature mark volume?
+    if (mark) { 
+    	// Mark points near the fault
+        //for (int i3=0; i3<n3; ++i3) {
+        Parallel.loop(n3,new Parallel.LoopInt() {
+        public void compute(int i3) {
+          for (int i2=0; i2<n2; ++i2) {
+            for (int i1=0; i1<n1; ++i1) {
+              p[4][i3][i2][i1] = t.onfault(i1,i2,i3) ? 1.0f : p[4][i3][i2][i1];
+            }
+          }
+        }});
+        //}    	
+    	p[4] = apply(t,p[4]);
+        // Quantize the feature marks (-1.0, 1.0) to integers
+        //for (int i3=0; i3<n3; ++i3) {
+        Parallel.loop(n3,new Parallel.LoopInt() {
+        public void compute(int i3) {
+          for (int i2=0; i2<n2; ++i2) {
+            for (int i1=0; i1<n1; ++i1) {
+                p[4][i3][i2][i1] = rint( max(-1.0f,min(1.0f,p[4][i3][i2][i1])));
+            }
+          }
+        }});
+        //}
+    }
     //for (int i3=0; i3<n3; ++i3) {
     Parallel.loop(n3,new Parallel.LoopInt() {
     public void compute(int i3) {
@@ -444,7 +490,10 @@ public class FakeData {
       }
     }});
     //}
-    return new float[][][][]{q0,q1,q2,q3};
+    copy(q0,p[0]);
+    copy(q1,p[1]);
+    copy(q2,p[2]);
+    copy(q3,p[3]);
   }
 
   /**
@@ -615,6 +664,9 @@ public class FakeData {
 
       // Fault throw.
       _t2 = fthrow;
+      
+      // Fault-mark zone half-width
+      _zone = 1.0f;
     }
     public C3 f(float x1, float x2, float x3) {
       if (faulted(x1,x2,x3)) {
@@ -659,11 +711,17 @@ public class FakeData {
                     d21,d22,d23,
                     d31,d32,d33);
     }
+    // Returns "true" if point is on or near the fault
+    public boolean onfault(float x1, float x2, float x3) {
+    	float dist = _w0+_w1*x1+_w2*x2+_w3*x3;
+    	return abs(dist) < _zone;
+    }
     private float _r1,_r2,_r3;
     private float _cphi,_sphi,_ottheta;
     private float _w0,_w1,_w2,_w3;
     private float _r22,_r23,_r32,_r33;
     private T2 _t2;
+    private float _zone;
     private boolean faulted(float x1, float x2, float x3) {
       return _w0+_w1*x1+_w2*x2+_w3*x3>=0.0f;
     }
@@ -699,6 +757,9 @@ public class FakeData {
 
       // Fault throw.
       _t1 = fthrow;
+      
+      // Fault-mark zone half-width
+      _zone = 1.0f;
     }
     public C3 f(float x1, float x2, float x3) {
       if (faulted(x1,x2,x3)) {
@@ -742,9 +803,19 @@ public class FakeData {
                     d21,d22,d23,
                     d31,d32,d33);
     }
+    // Returns "true" if point is on or near the fault
+    public boolean onfault(float x1, float x2, float x3) {
+        if (x1<=_a1)
+            return false;
+          float d1 = x1-_a1;
+          float d2 = x2-_a2;
+          float d3 = x3-_a3;
+          return abs(d2*d2+d3*d3 - d1*d1*_ottheta*_ottheta) < _zone;
+    }
     private float _a1,_a2,_a3;
     private float _ottheta;
     private T1 _t1;
+    private float _zone;
     private boolean faulted(float x1, float x2, float x3) {
       if (x1<=_a1)
         return false;
@@ -799,6 +870,9 @@ public class FakeData {
       return new D3( d11,  d12,  d13,
                     0.0f, 1.0f, 0.0f,
                     0.0f, 0.0f, 1.0f);
+    }
+    public boolean onfault(float x1, float x2, float x3) {// Stub
+    	return false;
     }
     private T1 _s1;
     private T2 _s2;
@@ -878,23 +952,39 @@ public class FakeData {
     return p;
   }
 
-  private static float[][][][] makeReflectivityWithNormals(
-      int n1, int n2, int n3) {
-    Random random = new Random(31);
-    float[] r = mul(0.1f,pow(mul(2.0f,sub(randfloat(random,n1),0.5f)),5.0f));
-    float[][][][] p = new float[4][n3][n2][n1];
-    for (int i3=0; i3<n3; ++i3) {
-      for (int i2=0; i2<n2; ++i2) {
-        copy(r,p[0][i3][i2]);
-      }
-    }
-    p[1] = fillfloat(1.0f,n1,n2,n3);
-    p[2] = fillfloat(0.0f,n1,n2,n3);
-    p[3] = fillfloat(0.0f,n1,n2,n3);
-    return p;
-  }
+  private static void makeReflectivityWithNormals( float[][][][] p ) {
+	    int n1 = p[0][0][0].length;
+	    int n2 = p[0][0].length;
+	    int n3 = p[0].length;
+	    Random random = new Random(31);
+	    float[] r = mul(0.1f,pow(mul(2.0f,sub(randfloat(random,n1),0.5f)),5.0f));
+	    for (int i3=0; i3<n3; ++i3) {
+	      for (int i2=0; i2<n2; ++i2) {
+	        copy(r,p[0][i3][i2]);
+	      }
+	    }
+	    p[1] = fillfloat(1.0f,n1,n2,n3);
+	    p[2] = fillfloat(0.0f,n1,n2,n3);
+	    p[3] = fillfloat(0.0f,n1,n2,n3);
+	  }
 
-  private static float[][][][] impedanceFromReflectivity(float[][][][] r) {
+  private static float[][][][] makeReflectivityWithNormals(
+	      int n1, int n2, int n3) {
+	    Random random = new Random(31);
+	    float[] r = mul(0.1f,pow(mul(2.0f,sub(randfloat(random,n1),0.5f)),5.0f));
+	    float[][][][] p = new float[4][n3][n2][n1];
+	    for (int i3=0; i3<n3; ++i3) {
+	      for (int i2=0; i2<n2; ++i2) {
+	        copy(r,p[0][i3][i2]);
+	      }
+	    }
+	    p[1] = fillfloat(1.0f,n1,n2,n3);
+	    p[2] = fillfloat(0.0f,n1,n2,n3);
+	    p[3] = fillfloat(0.0f,n1,n2,n3);
+	    return p;
+	  }
+
+  private static void impedanceFromReflectivity(float[][][][] r) {
     int n1 = r[0][0][0].length;
     int n2 = r[0][0].length;
     int n3 = r[0].length;
@@ -908,14 +998,18 @@ public class FakeData {
         }
       }
     }
-    return new float[][][][]{z,r[1],r[2],r[3]};
+    copy(z,r[0]);
   }
 
-  private static float[][][][] addChannels(float[][][][] r) {
+  private static void addChannels(float[][][][] r) {
     int n1 = r[0][0][0].length;
     int n2 = r[0][0].length;
     int n3 = r[0].length;
     float[][][] s = copy(r[0]);
+    // If feature mark volume, mark the channel
+    boolean mark = (r[4] != null);
+    float[][][] fmk = copy(r[4]);
+    
     int k1 = 75;
     float[] c2 = {0.4f*n2,0.6f*n2,0.5f*n2,0.7f*n2};
     float[] c3 = {0.1f*n3,0.5f*n3,0.7f*n3,0.9f*n3};
@@ -931,12 +1025,19 @@ public class FakeData {
           s[i3][i2][k1-1] -= 0.5f*a;
           s[i3][i2][k1  ] += 1.0f*a;
           s[i3][i2][k1+1] -= 0.5f*a;
+          if (mark) {
+        	  fmk[i3][i2][k1-1] = -1.0f;
+        	  fmk[i3][i2][k1  ] = -1.0f;
+        	  fmk[i3][i2][k1+1] = -1.0f;
+          }
         }
       }
     }
-    return new float[][][][]{s,r[1],r[2],r[3]};
+    copy(s,r[0]);
+    if (mark)
+    	copy(fmk,r[4]);
   }
-
+ 
   private static float[][][] combine(
     float depth, float[][][] pa, float[][][] pb) 
   {
@@ -978,7 +1079,7 @@ public class FakeData {
     return new float[][][]{q,p1,p2};
   }
 
-  private static float[][][][] addWavelet(double fpeak, float[][][][] p) {
+  private static void addWavelet(double fpeak, float[][][][] p) {
     double sigma = max(1.0,1.0/(2.0*PI*fpeak));
     int n1 = p[0][0][0].length;
     int n2 = p[0][0].length;
@@ -1007,7 +1108,7 @@ public class FakeData {
       }
     }
     q = mul(q,-1.0f/rms(q)); // negate for Ricker wavelet
-    return new float[][][][]{q,p1,p2,p3};
+    copy(q,p[0]);
   }
 
   private static float rms(float[][] f) {
