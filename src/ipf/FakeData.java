@@ -149,6 +149,9 @@ public class FakeData {
     T2 s2 = new Gaussians2(g2,g3,sg,hg);
     VerticalShear3 shear = new VerticalShear3(s1,s2);
 
+    int lnm = Thread.currentThread().getStackTrace()[3].getLineNumber();
+    System.out.println("In 1"+ ": d1=" + n1 + " d2=" + n2 + " d3="+ n3);
+
     // Faulting transforms
     float r1a = 0.0f*n1, r2a = 0.4f*n2, r3a = 0.5f*n3;
     float r1b = 0.0f*n1, r2b = 0.1f*n2, r3b = 0.3f*n3;
@@ -167,7 +170,7 @@ public class FakeData {
     PlanarFault3 faultb = new PlanarFault3(r1b,r2b,r3b,phib,thetab,throwb);
     PlanarFault3 faultc = new PlanarFault3(r1c,r2c,r3c,phic,thetac,throwc);
     ConicalFault3 faultd = new ConicalFault3(r1d,r2d,r3d,thetad,throwd);
-    
+
     // Construct a feature mark volume in p[4], if specified
     final float[][][][] p = new float[5][n3][n2][m1];
     float[][][] fmk = null;
@@ -177,12 +180,18 @@ public class FakeData {
     	p[4] = null;
     }
 
+    lnm = Thread.currentThread().getStackTrace()[3].getLineNumber();
+    System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
+
     // Reflectivity or impedance.
     makeReflectivityWithNormals( p );
     addChannels(p);
     if (impedance)
       impedanceFromReflectivity(p);
     
+    lnm = Thread.currentThread().getStackTrace()[3].getLineNumber();
+    System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
+
     // Apply the deformation sequence.
     for (int js=0; js<ns; ++js) {
       if (sequence.charAt(js)=='O') {
@@ -194,12 +203,17 @@ public class FakeData {
         if (conical) apply(faultd,p);
       }
     }
-
+    lnm = Thread.currentThread().getStackTrace()[3].getLineNumber();
+    System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
+ 
     // Wavelet and noise.
     if (wavelet)
       addWavelet(0.15,p);
     p[0] = mul(1.0f/rms(p[0]),p[0]);
     p[0] = addNoise(noise,p[0]);
+
+    lnm = Thread.currentThread().getStackTrace()[2].getLineNumber();
+    System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
 
     // Slopes.
     p[2] = neg(div(p[2],p[1]));
@@ -210,6 +224,9 @@ public class FakeData {
     p[2] = copy(n1,n2,n3,p[2]);
     p[3] = copy(n1,n2,n3,p[3]);
     p[4] = copy(n1,n2,n3,p[4]);
+
+    lnm = Thread.currentThread().getStackTrace()[2].getLineNumber();
+    System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
 
     if (mark)
     	return new float[][][][]{p[0],p[2],p[3],p[4]};

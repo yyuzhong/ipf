@@ -71,8 +71,9 @@ def goFakeData():
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
+  mark = True # if True, output a feature mark volume
+  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(n1,n2,n3,
+      sequence,nplanar,conjugate,conical,impedance,wavelet,noise,mark)
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
   writeImage(p3kfile,p3)

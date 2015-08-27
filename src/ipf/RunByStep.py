@@ -8,8 +8,11 @@ from fakeutils import *
 s1,s2,s3 = getSamplings()
 n1,n2,n3 = s1.count,s2.count,s3.count
 
+print "Init d1=",n1," d2=",n2," d3=",n3
+
 # Names and descriptions of image files used below.
 gxfile  = "gx" # input image (maybe after bilateral filtering)
+fmkfile = "fmk" # fault marks (known)
 gsxfile = "gsx" # image after lsf with fault likelihoods
 epfile  = "ep" # eigenvalue-derived planarity
 p2file  = "p2" # inline slopes
@@ -100,11 +103,14 @@ def goFakeData():
   impedance = False # if True, data = impedance model
   wavelet = True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
-  gx,p2,p3 = FakeData.seismicAndSlopes3d2014A(
-      sequence,nplanar,conjugate,conical,impedance,wavelet,noise)
+  mark = True # if True, output a feature mark volume
+  print "goFake d1=",n1," d2=",n2," d3=",n3
+  gx,p2,p3,fmk = FakeData.seismicAndSlopes3d2014A(n1,n2,n3,
+      sequence,nplanar,conjugate,conical,impedance,wavelet,noise,mark)
   writeImage(gxfile,gx)
   writeImage(p2kfile,p2)
   writeImage(p3kfile,p3)
+  writeImage(fmkfile,fmk)
   print "gx min =",min(gx)," max =",max(gx)
   print "p2 min =",min(p2)," max =",max(p2)
   print "p3 min =",min(p3)," max =",max(p3)
