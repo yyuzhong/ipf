@@ -82,33 +82,35 @@ def goExtract(args):
   half3=sub3/2
   acc=0
   finished=0
-  for i1 in range(n1):
+  for i3 in range(n3):
     if(finished>0):
       break
     for i2 in range(n2):  
       if(finished>0):
         break
-      for i3 in range(n3):
+      for i1 in range(n1):
         start1=i1-half1
         start2=i2-half2
         start3=i3-half3
         volres = [[[0 for x in range(sub1)] for x in range(sub2)] for x in range(sub3)] 
         print acc,">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-        for j1 in range(sub1):
+        for j3 in range(sub3):
           for j2 in range(sub2):
-            for j3 in range(sub3):
+            for j1 in range(sub1):
               tmp1=start1+j1
               tmp2=start2+j2
               tmp3=start3+j3
               if((tmp1>=0 and tmp1<n1) and (tmp2>=0 and tmp2<n2) and (tmp3>=0 and tmp3<n3)):
-                volres[j1][j2][j3]=gx[tmp1][tmp2][tmp3]
-                print "Y: ",tmp1,",",tmp2,",",tmp3,":",gx[tmp1][tmp2][tmp3]
+                volres[j3][j2][j1]=gx[tmp3][tmp2][tmp1]
+                print "Y: ",tmp1,",",tmp2,",",tmp3,":",gx[tmp3][tmp2][tmp1]
               else:
+		volres[j3][j2][j1]=0
                 print "X: ",tmp1,",",tmp2,",",tmp3
-        writeImage2(subVolumeDir,i1,i2,i3,volres)
+        #writeImage2(subVolumeDir,i1,i2,i3,volres)
+        writeImage3(subVolumeDir,acc,volres)
         print "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",acc
         acc=acc+1
-        if(acc>=10):
+        if(acc>=10000):
           finished=1
           break
 

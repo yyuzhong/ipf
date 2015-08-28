@@ -228,6 +228,17 @@ public class FakeData {
     lnm = Thread.currentThread().getStackTrace()[2].getLineNumber();
     System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
 
+    /*Test codes
+    float val=-5.305530f;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          p[0][i3][i2][i1] = val;
+          val = val+0.00001f;
+        }
+      }
+    }
+    */
     if (mark)
     	return new float[][][][]{p[0],p[2],p[3],p[4]};
     return new float[][][][]{p[0],p[2],p[3]};
