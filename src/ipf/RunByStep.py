@@ -93,15 +93,15 @@ def main(args):
   print("Finish all functiions")
 
 def goFakeData():
-  #sequence = 'A' # 1 episode of faulting only
-  sequence = 'OA' # 1 episode of folding, followed by 1 episode of faulting
+  sequence = 'A' # 1 episode of faulting only
+  #sequence = 'OA' # 1 episode of folding, followed by 1 episode of faulting
   #sequence = 'OOOOOAAAAA' # 5 episodes of folding, then 5 of faulting
   #sequence = 'OAOAOAOAOA' # 5 interleaved episodes of folding and faulting
-  nplanar = 3 # number of planar faults (no more than 3)
+  nplanar = 2 # number of planar faults (no more than 3)
   conjugate = False # if True, two large planar faults will intersect
   conical =  False # if True, may want to set nplanar to 0 (or not!)
   impedance = False # if True, data = impedance model
-  wavelet = True # if False, no wavelet will be used
+  wavelet = False #True # if False, no wavelet will be used
   noise = 0.5 # (rms noise)/(rms signal) ratio
   mark = True # if True, output a feature mark volume
   print "goFake d1=",n1," d2=",n2," d3=",n3

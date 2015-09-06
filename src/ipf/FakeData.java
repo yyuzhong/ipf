@@ -185,7 +185,7 @@ public class FakeData {
 
     // Reflectivity or impedance.
     makeReflectivityWithNormals( p );
-    addChannels(p);
+    //addChannels(p);
     if (impedance)
       impedanceFromReflectivity(p);
     
@@ -210,7 +210,7 @@ public class FakeData {
     if (wavelet)
       addWavelet(0.15,p);
     p[0] = mul(1.0f/rms(p[0]),p[0]);
-    p[0] = addNoise(noise,p[0]);
+    //p[0] = addNoise(noise,p[0]);
 
     lnm = Thread.currentThread().getStackTrace()[2].getLineNumber();
     System.out.println("In "+lnm + ": d1=" + p.length + " d2=" + p[0].length + " d3="+p[0][0].length);
@@ -239,6 +239,45 @@ public class FakeData {
       }
     }
     */
+    int sub1=3;
+    int sub2=3;
+    int half1=sub1/2;
+    int half2=sub2/2;
+    for (int i3=0; i3<n3; ++i3) {
+      for (int i2=0; i2<n2; ++i2) {
+        for (int i1=0; i1<n1; ++i1) {
+          int start1=i1-half1;
+          int start2=i2-half2;
+          float sn=0.0f;
+          float sd=0.0f;
+          Float[] sn2 = new Float[sub1];
+          for(int j1=0;j1<sub1;j1++){
+            sn2[j1]=0.0f;
+            for(int j2=0;j2<sub2;j2++){
+              int tmp1=start1+j1;
+              int tmp2=start2+j2;
+              if((tmp1>=0&&tmp1<n1)&&(tmp2>=0 && tmp2<n2)){
+                  sn2[j1]+=p[0][i3][tmp2][tmp1];
+              }
+              sn+=(sn2[j1]*sn2[j1]);
+            }
+          }
+          for(int j2=0;j2<sub2;j2++){
+            for(int j1=0;j1<sub1;j1++){
+              int tmp1=start1+j1;
+              int tmp2=start2+j2;
+              if((tmp1>=0&&tmp1<n1)&&(tmp2>=0 && tmp2<n2)){
+                  sd+=(p[0][i3][tmp2][tmp1]*p[0][i3][tmp2][tmp1]);
+              }
+            }
+          }
+          if(mark)
+            p[4][i3][i2][i1] = (sd==0.0f)?0.0f:(float)Math.log(sn/sd/(2*sub1+1));
+        }
+      }
+    }
+
+
     if (mark)
     	return new float[][][][]{p[0],p[2],p[3],p[4]};
     return new float[][][][]{p[0],p[2],p[3]};

@@ -489,6 +489,21 @@ public class FaultScanner {
         }
       }});
     }
+    /*yzyan output semblance only
+    for(int i3=0;i3<n3;++i3) {
+       for(int i2=0; i2<n2; ++i2) {
+          float[] f32 = f[i3][i2];
+          float[] sn32 = snd[0][i3][i2];
+          float[] sd32 = snd[1][i3][i2];
+          for (int i1=0; i1<n1; ++i1) {
+            float fpi = sd32[i1];//sd32[i1];
+            //if (fpi<0.0f) fpi = 0.0f; // necessary because of sinc
+            //if (fpi>1.0f) fpi = 1.0f; // interpolation in unrotate,
+            f32[i1] = fpi;
+          } 
+       }
+    }
+    */
     sw.stop();
     trace("FaultScanner.scan: done");
     return new float[][][][]{f,p,t};
