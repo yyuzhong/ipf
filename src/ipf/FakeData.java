@@ -239,6 +239,7 @@ public class FakeData {
       }
     }
     */
+    /*
     int sub1=3;
     int sub2=3;
     int half1=sub1/2;
@@ -276,7 +277,7 @@ public class FakeData {
         }
       }
     }
-
+    */
 
     if (mark)
     	return new float[][][][]{p[0],p[2],p[3],p[4]};
